@@ -35,4 +35,20 @@ gitDF = jsonlite::fromJSON(jsonlite::toJSON(json1))
 gitDF[gitDF$full_name == "jtleek/datasharing", "created_at"]
 
 
+# The code above was sourced from Michael Galarnyk's blog, found at:
+# https://towardsdatascience.com/accessing-data-from-github-api-using-r-3633fb62cb08
+
+
+#Learn about the GitHub API.  
+
+#The information about my github profile is 
+#stored in a data fram called data. 
+
+data <- fromJSON("https://api.github.com/users/skeher")
+data$followers #number of followers i have
+data$public_repos #number of public repositories i have
+
+# specific details about followers must add to the url 
+
+
 
