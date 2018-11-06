@@ -49,6 +49,9 @@ data$followers #number of followers i have
 data$public_repos #number of public repositories i have
 
 # specific details about followers must add to the url 
-
+followers <- fromJSON("https://api.github.com/users/skeher/followers")
+followers$login #the usernames of all my followers
+length <- length(myFollowers$login) #the amount of people who follow me
+length
 
 
