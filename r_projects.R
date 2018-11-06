@@ -44,14 +44,24 @@ gitDF[gitDF$full_name == "jtleek/datasharing", "created_at"]
 #The information about my github profile is 
 #stored in a data fram called data. 
 
-data <- fromJSON("https://api.github.com/users/skeher")
+data <- fromJSON("https://api.github.com/users/healyocp")
 data$followers #number of followers i have
 data$public_repos #number of public repositories i have
 
 # specific details about followers must add to the url 
-followers <- fromJSON("https://api.github.com/users/skeher/followers")
+followers <- fromJSON("https://api.github.com/users/healyocp/followers")
 followers$login #the usernames of all my followers
-length <- length(myFollowers$login) #the amount of people who follow me
+length <- length(followers$login) #the amount of people who follow me
 length
+
+#Repsoitory information 
+
+repositories <- fromJSON("https://api.github.com/users/healyocp/repos")
+repositories$name #the names ofnpublic repositories
+repositories$created_at #when these  were created
+lca <- fromJSON("https://api.github.com/repos/healyocp/cs3012Asig1/commits")
+lca$commit$message #the message included in each commit to this  repository
+
+
 
 
