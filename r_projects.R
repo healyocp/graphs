@@ -70,26 +70,6 @@ data$blog
 data$location
 data$repos_url
 
-  
-  
-  
-  
-  
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
 
 
 # specific details about followers must add to the url 
@@ -107,5 +87,6 @@ lca <- fromJSON("https://api.github.com/repos/healyocp/cs3012Asig1/commits")
 lca$commit$message #the message included in each commit to this  repository
 
 
-
+#Convert data to jason format 
+dataJason=toJSON(data, pretty = TRUE)
 
