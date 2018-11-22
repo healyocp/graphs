@@ -45,19 +45,91 @@ findFollowers <- function(username)
   followersDataFrame <- data_frame()
   while(x!=0)
   {
-    followers <- GET( paste0("https://api.github.com/users/", username, "/followers?per_page=100&page=", i),myToken)
+    followers <- GET( paste0("https://api.github.com/users/", username, "/followers?per_page=100&page=", i),myToken) # ensures all pages of followers are used
     followersContent <- content(followers)
-    currentFollowersDF <- lapply(followersContent, function(x) 
+    currentFollowersDF <- lapply(followersContent, function(singleFollower) 
     {
-      df <- data.frame(user = x$login, userID = x$id, followersURL = x$followers_url, followingURL = x$following_url)
-    }) %>% bind_rows()
-  
-    x <- length(followersContent)
-    followersDataFrame <- rbind(followersDataFrame, currentFollowersDF)
+      df <- data.frame(user = singleFollower$login, userID = singleFollower$id, followersURL = singleFollower$followers_url, followingURL = singleFollower$following_url)
+    }) %>% bind_rows() #data frames do not have same number of rows
+    print("hey")
+    i = i+1
+    x = length(followersContent)
+    followersDataFrame <- rbind(followersDataFrame, currentFollowersDF)# equally sized 
   }
+  print(i)
   return (followersDataFrame)
 }
 
+#Returns a dataframe with information on the Current Users Repositories
+findRepository <- function(username)
+{
+  i = 1
+  x = 1
+  repositoryDF = data_frame()
+  while(x!=0)
+  {
+    repository = GET( paste0("https://api.github.com/users/", username, "/repos?per_page=100&page=", i),myToken)
+    repositoryContent = content(repository)
+    currentRepositoryDF = lapply( repositoryContent, function(individualRepository) 
+    {
+      df <- data_frame(repo = individualRepository$name, id = individualRepository$id, commits = individualRepository$git_commits_url, language = individualRepository$languages) 
+    }) %>% bind_rows()
+    i = i+1
+    x = length(repositoryContent) # number of repositories per page ( in total there are x )
+    print(x)
+    repositoryDF = rbind(repositoryDF, currentRepositoryDF)
+  }
+  return (repositoryDF)
+}
 
-currentUser <- "phadej"
-x <- findFollowers(currentUser)
+findLanguages <- function(username)
+{
+  i=1
+  x=1
+  languageVector=c()
+  RepoNameVector=c()
+  languageDF = data_frame()
+  while(x!=0)
+  {
+    
+ 
+    repositoryDF = GET( paste0("https://api.github.com/users/", username, "/repos?per_page=100&page=", i),myToken)
+    repoContent = content(repositoryDF)
+    x = length(repoContent) 
+    print(x)
+    if (x==0)
+    {
+      break
+    }
+    for ( j in 1:length(repoContent))
+    {
+      repoLanguage=repoContent[[j]]$language
+      if(is.null(repoLanguage))
+      {
+        RepoNameVector[j] = repoContent[[j]]$name
+        languageVector[j] = ""
+      }else
+      {
+        languageVector[j] =repoContent[[j]]$language
+        RepoNameVector[j] = repoContent[[j]]$name
+      }
+    }
+    currentLanguageDF <- data_frame(repo =  RepoNameVector, language = languageVector)
+    languageDF <- rbind(languageDF, currentLanguageDF)
+    
+    i = i+1
+    
+  }
+
+  return (languageDF)
+}
+
+
+
+
+
+
+currentUser <- "unicodeveloper"
+#x <- findFollowers(currentUser)
+#p= findRepository(currentUser)
+z= findLanguages(currentUser)
