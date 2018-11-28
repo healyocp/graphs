@@ -124,7 +124,57 @@ findLanguages <- function(username)
 
   return (languageDF)
 }
-#Returns a dataframe with the language used in each of the users repos
+
+#Returns a dataframe giving the number of followers and number of repos a user has
+getFollowersInformation <- function(username)
+{
+  
+  followersDF <- findFollowers(username)
+  numberOfFollowers <- length(followersDF$userID)
+  followersUsernames <- followersDF$user
+  data <- data.frame()
+  
+  #Iterating through the current users followers to extract number of followers 
+  #and number of repos
+  for(i in 1:numberOfFollowers)
+  {
+    userName <- followersUsernames[i]
+    repos <- findRepository(userName)
+    followers <- findFollowers(userName) 
+    numberOfRepositories <- length(repos$repo)
+    numberOfFollowers <- length(followers$user)
+    languageData =findLanguages(userName)
+    newRow <- data.frame(userName, numberOfRepositories, numberOfFollowers)
+    
+    data <- rbind(data, newRow)
+    dataReLanguages=rbind( dataReLanguages,languageData)
+    i <- i+1;
+  }
+  return(data)
+}
+
+getFollowersLanguages<-function(username)
+{
+  followersDF <- findFollowers(username)
+  numberOfFollowers <- length(followersDF$userID)
+  followersUsernames <- followersDF$user
+  dataReLanguages = data.frame()
+  for(i in 1:numberOfFollowers)
+  {
+    languageData =findLanguages(username)
+    dataReLanguages=rbind( dataReLanguages,languageData)
+    i <- i+1;
+  }
+  return(dataReLanguages)
+  
+}
+
+
+
+
+
+
+
 
 #Returns a pie chart which depicts the languages information for the current user
 languagesVisualization <- function(username)
@@ -140,9 +190,101 @@ languagesVisualization <- function(username)
   
 }
 
-currentUser <- "unicodeveloper"
+
+
+
+currentUser <- "phadej"
+#x <- findFollowers(currentUser)
+#p= findRepository(currentUser)
+#z= findLanguages(currentUser)
+#m= languagesVisualization(currentUser)
+#a=getFollowersInformation(currentUser)
+#d=getFollowersLanguages(currentUser)
+
+
+
+checkDuplicate <- function(dataframe)
+{
+  noDuplicates <- distinct(dataframe)
+  return(noDuplicates)
+}
+
+
+
+#Generate data for followers and repos starting at user phadej
+
+
+#currentUser <- "aoifeTiernan"
+
 x <- findFollowers(currentUser)
-p= findRepository(currentUser)
-z= findLanguages(currentUser)
-m= languagesVisualization(currentUser)
+followersUsernames <- x$user
+numberOfFollowers <- length(x$userID)
+fullData <- findFollowersInformation(currentUser)
+i <- 1
+while(nrow(fullData)<15000)
+{
+  current <- followersUsernames[i]
+  newData <- getFollowersInformation(current)
+  fullData <- rbind(newData, fullData)
+  i <- i+1
+}
+fullData <- checkDuplicate(fullData)
+#originally - 1500 With duplicates taken out - 1363
+
+
+
+
+
+#Use plotly to graph the relationship between a users number of followers and repositories 
+
+scatter = plot_ly(data = fullData, x = ~numberOfFollowers, y = ~numberOfRepositories,
+                   text = ~paste("User: ", userName, '<br>Followers: ', numberOfFollowers, '<br>Repos:', numberOfRepositories),
+                   marker = list(size = 10, color = 'rgba(255, 182, 193, .9)',
+                                 line = list(color = 'rgba(152, 0, 0, .8)',width = 2))) %>%
+  layout(title = 'Relationship between Followers and Repositories',yaxis = list(zeroline = FALSE),xaxis = list(zeroline = FALSE),
+         plot_bgcolor='rgba(63, 191, 165,0.2)')
+scatter
+
+
+
+
+#Extracting data for users with over 1000 followers or repositories
+mostFollowers <- fullData[which(fullData$numberOfFollowers>=1000),]
+mostFollowers$code = 1
+mostRepos <- fullData[which(fullData$numberOfRepositories>=1000),]
+mostRepos$code = 0
+
+combined =rbind(mostFollowers,mostRepos)
+scatter2 = plot_ly(data = combined, x = ~numberOfFollowers, y = ~numberOfRepositories, color = ~code, colors = "Set1",
+                    text = ~paste("User: ", userName, '<br>Followers: ', numberOfFollowers, '<br>Repos:', numberOfRepositories)) %>%
+  layout(title = 'Most Followers and Repositories',yaxis = list(zeroline = FALSE),xaxis = list(zeroline = FALSE),
+         plot_bgcolor='rgba(63, 191, 165,0.2)')
+scatter2
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
 
