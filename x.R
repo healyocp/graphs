@@ -51,12 +51,12 @@ findFollowers <- function(username)
     {
       df <- data.frame(user = singleFollower$login, userID = singleFollower$id, followersURL = singleFollower$followers_url, followingURL = singleFollower$following_url)
     }) %>% bind_rows() #data frames do not have same number of rows
-    print("hey")
+   # print("hey")
     i = i+1
     x = length(followersContent)
     followersDataFrame <- rbind(followersDataFrame, currentFollowersDF)# equally sized 
   }
-  print(i)
+  #print(i)
   return (followersDataFrame)
 }
 
@@ -76,7 +76,7 @@ findRepository <- function(username)
     }) %>% bind_rows()
     i = i+1
     x = length(repositoryContent) # number of repositories per page ( in total there are x )
-    print(x)
+    #print(x)
     repositoryDF = rbind(repositoryDF, currentRepositoryDF)
   }
   return (repositoryDF)
@@ -92,11 +92,12 @@ findLanguages <- function(username)
   while(x!=0)
   {
     
+    
  
     repositoryDF = GET( paste0("https://api.github.com/users/", username, "/repos?per_page=100&page=", i),myToken)
     repoContent = content(repositoryDF)
     x = length(repoContent) 
-    print(x)
+    #print(x)
     if (x==0)
     {
       break
@@ -107,7 +108,7 @@ findLanguages <- function(username)
       if(is.null(repoLanguage))
       {
         RepoNameVector[j] = repoContent[[j]]$name
-        languageVector[j] = ""
+        languageVector[j] = "Unstated"
       }else
       {
         languageVector[j] =repoContent[[j]]$language
@@ -123,13 +124,25 @@ findLanguages <- function(username)
 
   return (languageDF)
 }
+#Returns a dataframe with the language used in each of the users repos
 
-
-
-
-
+#Returns a pie chart which depicts the languages information for the current user
+languagesVisualization <- function(username)
+{
+  z = findLanguages(username)
+  x =data.frame(table(z$language))
+  
+  pie =plot_ly(data =x, labels = ~Var1, values = ~Freq, type = 'pie') %>%
+    layout(title = paste('Languages used by  User', username),
+           xaxis = list(showgrid = FALSE, zeroline = FALSE, showticklabels = FALSE),
+           yaxis = list(showgrid = FALSE, zeroline = FALSE, showticklabels = FALSE))
+  return(pie)
+  
+}
 
 currentUser <- "unicodeveloper"
-#x <- findFollowers(currentUser)
-#p= findRepository(currentUser)
+x <- findFollowers(currentUser)
+p= findRepository(currentUser)
 z= findLanguages(currentUser)
+m= languagesVisualization(currentUser)
+
