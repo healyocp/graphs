@@ -88,12 +88,11 @@ findLanguages <- function(username)
   x=1
   languageVector=c()
   RepoNameVector=c()
+  mainLanguageVector = c()
   languageDF = data_frame()
+  userVector = c()
   while(x!=0)
   {
-    
-    
- 
     repositoryDF = GET( paste0("https://api.github.com/users/", username, "/repos?per_page=100&page=", i),myToken)
     repoContent = content(repositoryDF)
     x = length(repoContent) 
@@ -101,9 +100,11 @@ findLanguages <- function(username)
     if (x==0)
     {
       break
+
     }
     for ( j in 1:length(repoContent))
     {
+      
       repoLanguage=repoContent[[j]]$language
       if(is.null(repoLanguage))
       {
@@ -114,16 +115,18 @@ findLanguages <- function(username)
         languageVector[j] =repoContent[[j]]$language
         RepoNameVector[j] = repoContent[[j]]$name
       }
+      
     }
-    currentLanguageDF <- data_frame(repo =  RepoNameVector, language = languageVector)
-    languageDF <- rbind(languageDF, currentLanguageDF)
+    #currentLanguageDF <- data_frame(repo =  RepoNameVector, language = languageVector, user = userVector)
+    mainLanguageVector <- as.vector(rbind(languageVector,mainLanguageVector))
     
     i = i+1
     
   }
-
-  return (languageDF)
+  distincTv= mainLanguageVector[!duplicated(mainLanguageVector)]
+  return ( distincTv)
 }
+
 
 #Returns a dataframe giving the number of followers and number of repos a user has
 getFollowersInformation <- function(username)
@@ -143,11 +146,12 @@ getFollowersInformation <- function(username)
     followers <- findFollowers(userName) 
     numberOfRepositories <- length(repos$repo)
     numberOfFollowers <- length(followers$user)
-    languageData =findLanguages(userName)
+    
+    
     newRow <- data.frame(userName, numberOfRepositories, numberOfFollowers)
     
     data <- rbind(data, newRow)
-    dataReLanguages=rbind( dataReLanguages,languageData)
+    
     i <- i+1;
   }
   return(data)
@@ -169,10 +173,22 @@ getFollowersLanguages<-function(username)
   
 }
 
-
-
-
-
+getFollowersLanguages<-function(username)
+{
+  followersDF <- findFollowers(username)
+  numberOfFollowers <- length(followersDF$userID)
+  followersUsernames <- followersDF$user
+  #dataReLanguages = data.frame()
+  dataReLanguages=matrix()
+  for(i in 1:numberOfFollowers)
+  {
+    languageData =findLanguages(username)
+    dataReLanguages=as.matrix(rbind( dataReLanguages,languageData)) #may not use as.matrix
+    i <- i+1;
+  }
+  return(dataReLanguages)
+  
+}
 
 
 
@@ -181,6 +197,7 @@ languagesVisualization <- function(username)
 {
   z = findLanguages(username)
   x =data.frame(table(z$language))
+  
   
   pie =plot_ly(data =x, labels = ~Var1, values = ~Freq, type = 'pie') %>%
     layout(title = paste('Languages used by  User', username),
@@ -191,9 +208,29 @@ languagesVisualization <- function(username)
 }
 
 
+checkDuplicate <- function(dataframe)
+{
+  noDuplicates <- distinct(dataframe)
+  return(noDuplicates)
+}
+lengthF<-function(x)
+{
+  l=0
+  for (value in x)
+  {
+    print(value)
+    if (!strcmp("Unstated",value ))
+    {
+      l=l+1
+    }
+  }
+  return(l)
+  
+}
 
 
-currentUser <- "phadej"
+
+
 #x <- findFollowers(currentUser)
 #p= findRepository(currentUser)
 #z= findLanguages(currentUser)
@@ -203,86 +240,107 @@ currentUser <- "phadej"
 
 
 
-checkDuplicate <- function(dataframe)
-{
-  noDuplicates <- distinct(dataframe)
-  return(noDuplicates)
-}
 
 
 
 #Generate data for followers and repos starting at user phadej
 
+currentUser="aoifetiernan"
 
-#currentUser <- "aoifeTiernan"
+#x = findFollowers(currentUser)
+#followersUsernames = x$user
+#numberOfFollowers = length(x$userID)
+m=findLanguages(currentUser)
 
-x <- findFollowers(currentUser)
-followersUsernames <- x$user
-numberOfFollowers <- length(x$userID)
-fullData <- findFollowersInformation(currentUser)
-i <- 1
-while(nrow(fullData)<15000)
+z=lengthF(m)
+
+
+      
+numberOfLanguagesPerUser <-function(matrixofLangages)
 {
-  current <- followersUsernames[i]
-  newData <- getFollowersInformation(current)
-  fullData <- rbind(newData, fullData)
-  i <- i+1
+  noLanguagesPerUser =c()
+  for (c in ncol(matrixofLangages))# if  c is pointer great, if not need to keep track of pointer
+  {
+    #do soemthing here that will count the number of rows per each col 
+    
+  }
 }
-fullData <- checkDuplicate(fullData)
-#originally - 1500 With duplicates taken out - 1363
-
-
-
-
-
-#Use plotly to graph the relationship between a users number of followers and repositories 
-
-scatter = plot_ly(data = fullData, x = ~numberOfFollowers, y = ~numberOfRepositories,
-                   text = ~paste("User: ", userName, '<br>Followers: ', numberOfFollowers, '<br>Repos:', numberOfRepositories),
-                   marker = list(size = 10, color = 'rgba(255, 182, 193, .9)',
-                                 line = list(color = 'rgba(152, 0, 0, .8)',width = 2))) %>%
-  layout(title = 'Relationship between Followers and Repositories',yaxis = list(zeroline = FALSE),xaxis = list(zeroline = FALSE),
-         plot_bgcolor='rgba(63, 191, 165,0.2)')
-scatter
-
-
-
-
-#Extracting data for users with over 1000 followers or repositories
-mostFollowers <- fullData[which(fullData$numberOfFollowers>=1000),]
-mostFollowers$code = 1
-mostRepos <- fullData[which(fullData$numberOfRepositories>=1000),]
-mostRepos$code = 0
-
-combined =rbind(mostFollowers,mostRepos)
-scatter2 = plot_ly(data = combined, x = ~numberOfFollowers, y = ~numberOfRepositories, color = ~code, colors = "Set1",
-                    text = ~paste("User: ", userName, '<br>Followers: ', numberOfFollowers, '<br>Repos:', numberOfRepositories)) %>%
-  layout(title = 'Most Followers and Repositories',yaxis = list(zeroline = FALSE),xaxis = list(zeroline = FALSE),
-         plot_bgcolor='rgba(63, 191, 165,0.2)')
-scatter2
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
+      
+      
+      
+      
+      
+      
+      
+      
+      
+      
+      
+      
+      
+      
+      
+      
+      
+      
+      
+      
+      
+      
+      
+      
+      
+      
+      
+      
+      
+      
+      
+      
+      
+      
+      
+      
+      
+      
+      
+      
+      
+      
+      
+      
+      
+      
+      
+      
+      
+      
+      
+      
+      
+      
+      
+      
+      
+      
+      
+      
+      
+      
+      
+      
+      
+      
+      
+      
+      
+      
+      
+      
+      
+      
+      
+      
 
 
 
