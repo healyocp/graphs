@@ -232,7 +232,7 @@ fullData = getFollowersInformation(currentUser)
 fullData =checkDuplicate(fullData)
 
 
-scatterRep = plot_ly(data = fullData, x = ~numberOfFollowers, y = ~numberOfRepositories,
+scatterRep = plot_ly(data = fullData, type="scatter",mode="markers", x = ~numberOfFollowers, y = ~numberOfRepositories,
                      text = ~paste("User: ", userName, '<br>Followers: ', numberOfFollowers, '<br>Repos:', numberOfRepositories),
                      marker = list(size = 10, color = 'rgba(255, 182, 193, .9)',
                                    line = list(color = 'rgba(152, 0, 0, .8)',width = 2))) %>%
@@ -260,13 +260,14 @@ languagesPie <- function(username)
 
 
 pieOfLanguages= languagesPie(currentUser)
+pieOfLanguages
 
 ###NetowrkGraph    
       
 makingNetworkgraph <- function(toPlot,labels)
 {
-  username = "anrieff"
-  myFollowers = getFollowers("anrieff")
+  username = "aoifetiernan"
+  myFollowers = getFollowers("aoifetiernan")
   labels = c(username)
   toPlot = c()
   for(i in 1:length(myFollowers))
@@ -340,16 +341,17 @@ networkgraph <- function(toPlot, labels)
 }
 
 
-networkGraph = makingNetworkgraph(toPlot,labels)     
+networkGraph1 = makingNetworkgraph(toPlot,labels)     
+networkGraph1
       
 Sys.setenv("plotly_username"="healyocp")
 Sys.setenv("plotly_api_key"="HU6gWuydpeFmcSbVci3f")      
 
-api_create(scatterRep, filename = "ScatterPlotFollowers&Repositories")
-api_create(networkGraph, filename="networkOfFollowers")
-api_create(pieOfLanguages, filename="LanguagesOfUser")
+api_create(scatterRep, filename ="scatter")
+api_create(networkGraph, filename="network")
+api_create(pieOfLanguages, filename="Language")
 
-
+help("api_create")
       
       
       
