@@ -60,6 +60,8 @@ findFollowers <- function(username)
   return (followersDataFrame)
 }
 
+
+
 #Returns a dataframe with information on the Current Users Repositories
 findRepository <- function(username)
 {
@@ -126,6 +128,125 @@ findLanguages <- function(username)
   distincTv= mainLanguageVector[!duplicated(mainLanguageVector)]
   return ( distincTv)
 }
+
+
+getFollowers <- function(username)
+{
+ 
+  URL <- paste("https://api.github.com/users/", username , "/followers", sep="")
+  followers = fromJSON(URL)
+  return (followers$login)
+}
+make_social_graph <- function(toPlot,labels)
+{
+  username <- 'phadej'
+  myFollowers <- getFollowers('phadej')
+  labels <- c(username)
+  toPlot <- c()
+  for(i in 1:length(myFollowers))
+  {
+    their_username <- myFollowers[i]
+    labels = c(labels, their_username)
+    toPlot = c(toPlot, username, their_username)
+  }
+  
+  for(i in 1:length(myFollowers))
+  {
+    username <- myFollowers[i]
+    theirFollowers <- getFollowers(username)
+    for (j in 1:length(theirFollowers))
+    {
+      if (is.element(theirFollowers[j], myFollowers))
+      {
+        toPlot = c(toPlot, username, theirFollowers[j])
+      }
+      else
+      {
+        next
+      }
+    }
+  }
+  social_graph(toPlot, labels)
+}
+
+social_graph <- function(toPlot, labels)
+{
+  library(plotly)
+  library(quantmod)
+  library(igraph)
+  
+  g<-make_graph(edges=c(toPlot))
+  G <- upgrade_graph(g)
+  L <- layout.circle(G)
+  vs <- V(G)
+  es <- as.data.frame(get.edgelist(G))
+  Nv <- length(vs)
+  Ne <- length(es[1]$V1)
+  Xn <- L[,1]
+  Yn <- L[,2]
+  
+  network <- plot_ly(x = ~Xn, y = ~Yn, mode = "markers", text = labels, hoverinfo = "text", type="scatter")
+  
+  edge_shapes <- list()
+  for(i in 1:Ne) 
+  {
+    v0 <- es[i,]$V1
+    v1 <- es[i,]$V2
+    
+    edge_shape = list(
+      type = "line",
+      line = list(color = "#030303", width = 0.3),
+      x0 = Xn[v0],
+      y0 = Yn[v0],
+      x1 = Xn[v1],
+      y1 = Yn[v1]
+    )
+    
+    edge_shapes[[i]] <- edge_shape
+  }
+  axis <- list(title = "", showgrid = FALSE, showticklabels = FALSE, zeroline = FALSE)
+  p <- layout(
+    network,
+    title = 'Followers',
+    shapes = edge_shapes,
+    xaxis = axis,
+    yaxis = axis
+  )
+  #chart_link = api_create(p, filename="social_graph")
+  return (p)
+}
+
+
+
+networkGraph = make_social_graph(toPlot,labels)
+
+
+
+
+help("api_create")
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
 
 
 #Returns a dataframe giving the number of followers and number of repos a user has
