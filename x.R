@@ -5,6 +5,9 @@ library(jsonlite)
 library(httpuv)
 #install.packages("httr")
 library(httr)
+library(plotly)
+library(quantmod)
+library(igraph)
 
 # Can be github, linkedin etc depending on application
 oauth_endpoints("github")
@@ -37,6 +40,8 @@ gitDF[gitDF$full_name == "jtleek/datasharing", "created_at"]
 
 # The code above was sourced from Michael Galarnyk's blog, found at:
 # https://towardsdatascience.com/accessing-data-from-github-api-using-r-3633fb62cb08
+
+
 
 findFollowers <- function(username)
 {
@@ -129,124 +134,15 @@ findLanguages <- function(username)
   return ( distincTv)
 }
 
-
 getFollowers <- function(username)
 {
  
-  URL <- paste("https://api.github.com/users/", username , "/followers", sep="")
+  URL =paste("https://api.github.com/users/", username , "/followers", sep="")
+  URLencode(URL)
+  #followersContent <- content(followers)
   followers = fromJSON(URL)
   return (followers$login)
 }
-make_social_graph <- function(toPlot,labels)
-{
-  username <- 'phadej'
-  myFollowers <- getFollowers('phadej')
-  labels <- c(username)
-  toPlot <- c()
-  for(i in 1:length(myFollowers))
-  {
-    their_username <- myFollowers[i]
-    labels = c(labels, their_username)
-    toPlot = c(toPlot, username, their_username)
-  }
-  
-  for(i in 1:length(myFollowers))
-  {
-    username <- myFollowers[i]
-    theirFollowers <- getFollowers(username)
-    for (j in 1:length(theirFollowers))
-    {
-      if (is.element(theirFollowers[j], myFollowers))
-      {
-        toPlot = c(toPlot, username, theirFollowers[j])
-      }
-      else
-      {
-        next
-      }
-    }
-  }
-  social_graph(toPlot, labels)
-}
-
-social_graph <- function(toPlot, labels)
-{
-  library(plotly)
-  library(quantmod)
-  library(igraph)
-  
-  g<-make_graph(edges=c(toPlot))
-  G <- upgrade_graph(g)
-  L <- layout.circle(G)
-  vs <- V(G)
-  es <- as.data.frame(get.edgelist(G))
-  Nv <- length(vs)
-  Ne <- length(es[1]$V1)
-  Xn <- L[,1]
-  Yn <- L[,2]
-  
-  network <- plot_ly(x = ~Xn, y = ~Yn, mode = "markers", text = labels, hoverinfo = "text", type="scatter")
-  
-  edge_shapes <- list()
-  for(i in 1:Ne) 
-  {
-    v0 <- es[i,]$V1
-    v1 <- es[i,]$V2
-    
-    edge_shape = list(
-      type = "line",
-      line = list(color = "#030303", width = 0.3),
-      x0 = Xn[v0],
-      y0 = Yn[v0],
-      x1 = Xn[v1],
-      y1 = Yn[v1]
-    )
-    
-    edge_shapes[[i]] <- edge_shape
-  }
-  axis <- list(title = "", showgrid = FALSE, showticklabels = FALSE, zeroline = FALSE)
-  p <- layout(
-    network,
-    title = 'Followers',
-    shapes = edge_shapes,
-    xaxis = axis,
-    yaxis = axis
-  )
-  #chart_link = api_create(p, filename="social_graph")
-  return (p)
-}
-
-
-
-networkGraph = make_social_graph(toPlot,labels)
-
-
-
-
-help("api_create")
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
 
 
 #Returns a dataframe giving the number of followers and number of repos a user has
@@ -287,44 +183,10 @@ getFollowersLanguages<-function(username)
   for(i in 1:numberOfFollowers)
   {
     languageData =findLanguages(username)
-    dataReLanguages=rbind( dataReLanguages,languageData)
+    dataReLanguages=cbind( dataReLanguages,languageData)
     i <- i+1;
   }
   return(dataReLanguages)
-  
-}
-
-getFollowersLanguages<-function(username)
-{
-  followersDF <- findFollowers(username)
-  numberOfFollowers <- length(followersDF$userID)
-  followersUsernames <- followersDF$user
-  #dataReLanguages = data.frame()
-  dataReLanguages=matrix()
-  for(i in 1:numberOfFollowers)
-  {
-    languageData =findLanguages(username)
-    dataReLanguages=as.matrix(rbind( dataReLanguages,languageData)) #may not use as.matrix
-    i <- i+1;
-  }
-  return(dataReLanguages)
-  
-}
-
-
-
-#Returns a pie chart which depicts the languages information for the current user
-languagesVisualization <- function(username)
-{
-  z = findLanguages(username)
-  x =data.frame(table(z$language))
-  
-  
-  pie =plot_ly(data =x, labels = ~Var1, values = ~Freq, type = 'pie') %>%
-    layout(title = paste('Languages used by  User', username),
-           xaxis = list(showgrid = FALSE, zeroline = FALSE, showticklabels = FALSE),
-           yaxis = list(showgrid = FALSE, zeroline = FALSE, showticklabels = FALSE))
-  return(pie)
   
 }
 
@@ -348,59 +210,155 @@ lengthF<-function(x)
   return(l)
   
 }
-
-
-
-
-#x <- findFollowers(currentUser)
-#p= findRepository(currentUser)
-#z= findLanguages(currentUser)
-#m= languagesVisualization(currentUser)
-#a=getFollowersInformation(currentUser)
-#d=getFollowersLanguages(currentUser)
+####Graphs#######
 
 
 
 
 
 
-#Generate data for followers and repos starting at user phadej
-
-currentUser="aoifetiernan"
-
-#x = findFollowers(currentUser)
-#followersUsernames = x$user
-#numberOfFollowers = length(x$userID)
-m=findLanguages(currentUser)
-
-z=lengthF(m)
 
 
-      
-numberOfLanguagesPerUser <-function(matrixofLangages)
+
+
+#Generate data for followers and repos starting at user simonsmith
+
+currentUser="simonsmith"
+x = findFollowers(currentUser)
+followersUsernames =x$user
+numberOfFollowers = length(x$userID)
+fullData = getFollowersInformation(currentUser)
+i = 1
+while(nrow(fullData)<15000)
 {
-  noLanguagesPerUser =c()
-  for (c in ncol(matrixofLangages))# if  c is pointer great, if not need to keep track of pointer
-  {
-    #do soemthing here that will count the number of rows per each col 
-    
-  }
+  current = followersUsernames[i]
+  newData = getFollowersInformation(current)
+  fullData = rbind(newData, fullData)
+  i = i+1
+}
+fullData =checkDuplicate(fullData)
+
+
+scatterRep = plot_ly(data = fullData, x = ~numberOfFollowers, y = ~numberOfRepositories,
+                     text = ~paste("User: ", userName, '<br>Followers: ', numberOfFollowers, '<br>Repos:', numberOfRepositories),
+                     marker = list(size = 10, color = 'rgba(255, 182, 193, .9)',
+                                   line = list(color = 'rgba(152, 0, 0, .8)',width = 2))) %>%
+  layout(title = 'Relationship between Followers and Repositories',yaxis = list(zeroline = FALSE),xaxis = list(zeroline = FALSE),
+         plot_bgcolor='rgba(63, 191, 165,0.2)')
+scatterRep
+      
+
+#Returns a pie chart which depicts the languages information for the current user     
+      
+languagesVisualization <- function(username)
+{
+  z = findLanguages(username)
+  x =data.frame(table(z$language))
+  
+  
+  pieLang =plot_ly(data =x, labels = ~Var1, values = ~Freq, type = 'pie') %>%
+    layout(title = paste('Languages used by  User: ', username),
+           xaxis = list(showgrid = FALSE, zeroline = FALSE, showticklabels = FALSE),
+           yaxis = list(showgrid = FALSE, zeroline = FALSE, showticklabels = FALSE))
+  return(pieLang)
+  
 }
       
+
+
+
+lang= findLanguages(currentUser)
+pieOfLanguages= languagesVisualization(currentUser)
+
+###NetowrkGraph    
       
+makingNetworkgraph <- function(toPlot,labels)
+{
+  username = "simonsmith"
+  myFollowers = getFollowers("simonsmith")
+  labels = c(username)
+  toPlot = c()
+  for(i in 1:length(myFollowers))
+  {
+    their_username = myFollowers[i]
+    labels = c(labels, their_username)
+    toPlot = c(toPlot, username, their_username)
+  }
+  
+  for(i in 1:length(myFollowers))
+  {
+    username = myFollowers[i]
+    theirFollowers = getFollowers(username)
+    for (j in 1:length(theirFollowers))
+    {
+      if (is.element(theirFollowers[j], myFollowers))
+      {
+        toPlot = c(toPlot, username, theirFollowers[j])
+      }
+      else
+      {
+        next
+      }
+    }
+  }
+  networkgraph(toPlot, labels)
+}
+
+networkgraph <- function(toPlot, labels)
+{
+  
+  g<-make_graph(edges=c(toPlot))
+  G <- upgrade_graph(g)
+  L <- layout.circle(G)
+  vs <- V(G)
+  es <- as.data.frame(get.edgelist(G))
+  Nv <- length(vs)
+  Ne <- length(es[1]$V1)
+  Xn <- L[,1]
+  Yn <- L[,2]
+  
+  network <- plot_ly(x = ~Xn, y = ~Yn, mode = "markers", text = labels, hoverinfo = "text", type="scatter")
+  
+  edge_shapes <- list()
+  for(i in 1:Ne) 
+  {
+    v0 <- es[i,]$V1
+    v1 <- es[i,]$V2
+    
+    edge_shape = list(
+      type = "line",
+      line = list(color = "#030303", width = 0.3),
+      x0 = Xn[v0],
+      y0 = Yn[v0],
+      x1 = Xn[v1],
+      y1 = Yn[v1]
+    )
+    
+    edge_shapes[[i]] <- edge_shape
+  }
+  axis <- list(title = "", showgrid = FALSE, showticklabels = FALSE, zeroline = FALSE)
+  networkToPrint <- layout(
+    network,
+    title = 'Followers',
+    shapes = edge_shapes,
+    xaxis = axis,
+    yaxis = axis
+  )
+  
+  return (networkToPrint)
+}
+
+
+networkGraph = makingNetworkgraph(toPlot,labels)     
       
-      
-      
-      
-      
-      
-      
-      
-      
-      
-      
-      
-      
+Sys.setenv("plotly_username"="healyocp")
+Sys.setenv("plotly_api_key"="HU6gWuydpeFmcSbVci3f")      
+
+api_create(scatterRep, filename = "ScatterPlotFollowers&Repositories")
+api_create(networkGraph, filename="networkOfFollowers")
+api_create(pieOfLanguages, filename="LanguagesOfUser")
+
+
       
       
       
