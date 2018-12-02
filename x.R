@@ -8,6 +8,7 @@ library(httr)
 library(plotly)
 library(quantmod)
 library(igraph)
+library(dplyr)
 
 # Can be github, linkedin etc depending on application
 oauth_endpoints("github")
@@ -97,7 +98,6 @@ findLanguages <- function(username)
   RepoNameVector=c()
   mainLanguageVector = c()
   languageDF = data_frame()
-  userVector = c()
   while(x!=0)
   {
     repositoryDF = GET( paste0("https://api.github.com/users/", username, "/repos?per_page=100&page=", i),myToken)
@@ -124,14 +124,15 @@ findLanguages <- function(username)
       }
       
     }
-    #currentLanguageDF <- data_frame(repo =  RepoNameVector, language = languageVector, user = userVector)
-    mainLanguageVector <- as.vector(rbind(languageVector,mainLanguageVector))
+    currentLanguageDF <- data_frame(repo =  RepoNameVector, language = languageVector)
+   
     
     i = i+1
+    languageDF <- rbind(currentLanguageDF, languageDF)
     
   }
-  distincTv= mainLanguageVector[!duplicated(mainLanguageVector)]
-  return ( distincTv)
+  #distincTv= mainLanguageVector[!duplicated(mainLanguageVector)]
+  return ( languageDF)
 }
 
 getFollowers <- function(username)
@@ -223,19 +224,11 @@ lengthF<-function(x)
 
 #Generate data for followers and repos starting at user simonsmith
 
-currentUser="simonsmith"
+currentUser="aoifetiernan"
 x = findFollowers(currentUser)
 followersUsernames =x$user
 numberOfFollowers = length(x$userID)
 fullData = getFollowersInformation(currentUser)
-i = 1
-while(nrow(fullData)<15000)
-{
-  current = followersUsernames[i]
-  newData = getFollowersInformation(current)
-  fullData = rbind(newData, fullData)
-  i = i+1
-}
 fullData =checkDuplicate(fullData)
 
 
@@ -250,7 +243,7 @@ scatterRep
 
 #Returns a pie chart which depicts the languages information for the current user     
       
-languagesVisualization <- function(username)
+languagesPie <- function(username)
 {
   z = findLanguages(username)
   x =data.frame(table(z$language))
@@ -266,16 +259,14 @@ languagesVisualization <- function(username)
       
 
 
-
-lang= findLanguages(currentUser)
-pieOfLanguages= languagesVisualization(currentUser)
+pieOfLanguages= languagesPie(currentUser)
 
 ###NetowrkGraph    
       
 makingNetworkgraph <- function(toPlot,labels)
 {
-  username = "simonsmith"
-  myFollowers = getFollowers("simonsmith")
+  username = "anrieff"
+  myFollowers = getFollowers("anrieff")
   labels = c(username)
   toPlot = c()
   for(i in 1:length(myFollowers))
